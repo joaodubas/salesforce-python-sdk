@@ -1,43 +1,55 @@
-from login import LoginWithRestAPI
-from urlResources import ResourcesName
-from common_api import SalesForceAPI
-from exception import AuthenticationFailed
-from sObject import SObject
-import utils
+# encoding: utf-8
 import json
+
+from .common_api import SalesForceAPI
+from .exception import AuthenticationFailed
+from .login import LoginWithRestAPI
+from .s_object import SObject
+from .url_resources import ResourcesName
+from .utils import (
+    authenticate as u_auth,
+    json_content_headers,
+    get_request_url,
+    send_request
+)
 
 
 class SalesForceRestAPI(SalesForceAPI):
-    def __init__(self,
-                 httplib,
-                 url_resources,
-                 auth=None):
+    def __init__(
+            self,
+            httplib,
+            url_resources,
+            auth=None
+    ):
         super(SalesForceRestAPI, self).__init__(url_resources, httplib, auth)
-
         self.__login_api = None
 
     def authenticate(self, **kwargs):
         if 'code' in kwargs:
             if not self.__login_api:
-                raise AuthenticationFailed("You first need to use the get_auth_uri() to get the 'code'")
+                raise AuthenticationFailed(
+                    'You first need to use the get_auth_uri() to get the `code`'
+                )
 
         else:
-            self.__login_api = login_api = LoginWithRestAPI(
+            self.__login_api = LoginWithRestAPI(
                 self.httplib,
                 self.url_resources,
-                **kwargs)
+                **kwargs
+            )
 
         return self.__login_api.authenticate(**kwargs)
 
     def get_auth_uri(self, **kwargs):
-        self.__login_api = login_api = LoginWithRestAPI(
+        self.__login_api = LoginWithRestAPI(
             self.httplib,
             self.url_resources,
-            **kwargs)
+            **kwargs
+        )
 
-        return login_api.get_auth_uri()
+        return self.__login_api.get_auth_uri()
 
-    @utils.authenticate
+    @u_auth
     def query(self, query_string):
         query_url = self.url_resources.get_full_resource_url(
             self.auth.instance_url,
@@ -46,11 +58,12 @@ class SalesForceRestAPI(SalesForceAPI):
         params = {'q': query_string}
         return self.get(query_url, params)
 
-    @utils.authenticate
+    @u_auth
     def query_all(self, query_string):
         query_url = self.url_resources.get_full_resource_url(
             self.auth.instance_url,
-            ResourcesName.get_resource_name("queryAll"))
+            ResourcesName.get_resource_name("queryAll")
+        )
 
         params = {'q': query_string}
         resp = self.get(query_url, params)
@@ -69,55 +82,62 @@ class SalesForceRestAPI(SalesForceAPI):
 
         return do_query_all(resp)
 
-    @utils.authenticate
+    @u_auth
     def query_more(self, url):
         query_url = self.url_resources.get_full_resource_url(
             self.auth.instance_url,
-            ResourcesName.get_resource_name("query"))
+            ResourcesName.get_resource_name("query")
+        )
 
-        if url.startswith(query_url,
-                          len(self.auth.instance_url)):
+        if url.startswith(query_url, len(self.auth.instance_url)):
             get_url = '{0}/{1}'.format(self.auth.instance_url, url)
         else:
             get_url = '{0}/{1}'.format(query_url, url)
 
         return self.get(get_url)
 
-    @utils.authenticate
+    @u_auth
     def search(self, search_string):
         search_url = self.url_resources.get_full_resource_url(
             self.auth.instance_url,
-            ResourcesName.get_resource_name("search"))
+            ResourcesName.get_resource_name("search")
+        )
 
         params = {'q': search_string}
 
         return self.get(search_url, params)
 
-    @utils.authenticate
+    @u_auth
     def quick_search(self, search_string):
         return self.search('FIND {%s}' % search_string)
 
-    @utils.authenticate
+    @u_auth
     def get(self, get_url, params=None):
-        return self.__send_request('GET',
-                                   get_url,
-                                   params=params)
+        return self.__send_request(
+            'GET',
+            get_url,
+            params=params
+        )
 
-    @utils.authenticate
+    @u_auth
     def post(self, post_url, data):
-        return self.__send_request('POST',
-                                   post_url,
-                                   data=json.dumps(data))
+        return self.__send_request(
+            'POST',
+            post_url,
+            data=json.dumps(data)
+        )
 
-    @utils.authenticate
+    @u_auth
     def __getattr__(self, name):
         if not name[0].isalpha():
             return object.__getattribute__(self, name)
 
-        return RestSObject(name,
-                           self.httplib,
-                           self.auth,
-                           self.url_resources)
+        return RestSObject(
+            name,
+            self.httplib,
+            self.auth,
+            self.url_resources
+        )
 
     def __getstate__(self):
         return self.__dict__
@@ -126,15 +146,21 @@ class SalesForceRestAPI(SalesForceAPI):
         self.__dict__.update(d)
 
     def __send_request(self, method, url, **kwargs):
-        headers = utils.json_content_headers(self.auth.access_token)
+        headers = json_content_headers(self.auth.access_token)
 
-        request_url = utils.get_request_url(url, self.auth.instance_url, self.url_resources.get_resource_url())
+        request_url = get_request_url(
+            url,
+            self.auth.instance_url,
+            self.url_resources.get_resource_url()
+        )
 
-        return utils.send_request(method,
-                                  self.httplib,
-                                  request_url,
-                                  headers,
-                                  **kwargs)
+        return send_request(
+            method,
+            self.httplib,
+            request_url,
+            headers,
+            **kwargs
+        )
 
 
 class RestSObject(SObject):
@@ -143,18 +169,18 @@ class RestSObject(SObject):
 
         self.__name = name
 
-    @utils.authenticate
+    @u_auth
     def describe(self):
         return self.get('/describe')
 
-    @utils.authenticate
+    @u_auth
     def create(self, data):
         return self.post(data)
 
-    @utils.authenticate
+    @u_auth
     def update(self, data):
         if not isinstance(data, list):
-            raise TypeError("'update' require a parameter type 'list'")
+            raise TypeError('`update` require a parameter type `list`')
 
         record_id = data[0]
         records = data[1]
@@ -162,61 +188,81 @@ class RestSObject(SObject):
         update_url = '{0}/{1}'.format(
             self.url_resources.get_resource_sobject_url(
                 self.auth.instance_url,
-                ResourcesName.get_resource_name("sobject"),
-                self.__name),
-            record_id)
+                ResourcesName.get_resource_name('sobject'),
+                self.__name
+            ),
+            record_id
+        )
 
-        return self.__send_request('PATCH',
-                                   update_url,
-                                   data=json.dumps(records))
+        return self.__send_request(
+            'PATCH',
+            update_url,
+            data=json.dumps(records)
+        )
 
-    @utils.authenticate
+    @u_auth
     def delete(self, record_id):
         delete_url = '{0}/{1}'.format(
             self.url_resources.get_resource_sobject_url(
                 self.auth.instance_url,
-                ResourcesName.get_resource_name("sobject"),
-                self.__name),
-            record_id)
+                ResourcesName.get_resource_name('sobject'),
+                self.__name
+            ),
+            record_id
+        )
 
-        return self.__send_request('DELETE',
-                                   delete_url)
+        return self.__send_request(
+            'DELETE',
+            delete_url
+        )
 
-    @utils.authenticate
+    @u_auth
     def post(self, data, record_id=None):
         post_url = self.url_resources.get_resource_sobject_url(
             self.auth.instance_url,
-            ResourcesName.get_resource_name("sobject"),
-            self.__name)
+            ResourcesName.get_resource_name('sobject'),
+            self.__name
+        )
 
         if record_id is not None:
             post_url += '/' + record_id
 
-        return self.__send_request('POST',
-                                   post_url,
-                                   data=json.dumps(data))
+        return self.__send_request(
+            'POST',
+            post_url,
+            data=json.dumps(data)
+        )
 
-    @utils.authenticate
+    @u_auth
     def get(self, url=None, params=None):
         get_url = self.url_resources.get_resource_sobject_url(
             self.auth.instance_url,
-            ResourcesName.get_resource_name("sobject"),
-            self.__name)
+            ResourcesName.get_resource_name('sobject'),
+            self.__name
+        )
 
         if url is not None:
             get_url += url
 
-        return self.__send_request('GET',
-                                   get_url,
-                                   params=params)
+        return self.__send_request(
+            'GET',
+            get_url,
+            params=params
+        )
 
     def __send_request(self, method, url, **kwargs):
-        headers = utils.json_content_headers(self.auth.access_token)
+        headers = json_content_headers(self.auth.access_token)
 
-        request_url = utils.get_request_url(url, self.auth.instance_url, self.url_resources.get_resource_url())
+        request_url = get_request_url(
+            url,
+            self.auth.instance_url,
+            self.url_resources.get_resource_url()
+        )
 
-        return utils.send_request(method,
-                                  self.httplib,
-                                  request_url,
-                                  headers,
-                                  **kwargs)
+        return send_request(
+            method,
+            self.httplib,
+            request_url,
+            headers,
+            **kwargs
+        )

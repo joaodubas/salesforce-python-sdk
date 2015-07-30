@@ -1,4 +1,5 @@
-import utils
+# encoding: utf-8
+from .utils import send_request
 
 
 class Version(object):
@@ -7,18 +8,21 @@ class Version(object):
     def __init__(self):
         super(Version, self).__init__()
 
-    @staticmethod
-    def get_latest_version(httplib):
-        version_api_url = Version.VERSION_PATH
+    @classmethod
+    def get_latest_version(cls, httplib):
+        version_api_url = cls.VERSION_PATH
         latest_version = 0
 
-        response = utils.send_request('GET',
-                                      httplib,
-                                      version_api_url,
-                                      None)
+        response = send_request(
+            'GET',
+            httplib,
+            version_api_url,
+            None
+        )
 
-        for value in response:
-            if float(value['version']) > latest_version:
-                latest_version = float(value['version'])
+        latest_version = max(
+            latest_version,
+            *[float(v['version'] for v in response)]
+        )
 
         return latest_version

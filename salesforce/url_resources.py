@@ -26,21 +26,24 @@ class RestUrlResources(UrlResources):
         super(RestUrlResources, self).__init__(domain, sandbox, version)
 
     def get_resource_path(self):
-        return RestUrlResources.RESOURCE_PATH
+        return self.RESOURCE_PATH
 
     def get_full_resource_url(self, instance_url, resource_name):
         return '{0}{1}{2}'.format(
             instance_url,
-            RestUrlResources.RESOURCE_PATH.format(version=self.version),
+            self.RESOURCE_PATH.format(version=self.version),
             resource_name)
 
-    def get_resource_sobject_url(self,
-                                 instance_url,
-                                 resource_name,
-                                 sobject_name):
+    def get_resource_sobject_url(
+            self,
+            instance_url,
+            resource_name,
+            sobject_name
+    ):
         return '{0}{1}'.format(
             self.get_full_resource_url(instance_url, resource_name),
-            sobject_name)
+            sobject_name
+        )
 
 
 class SoapUrlResources(UrlResources):
@@ -50,12 +53,13 @@ class SoapUrlResources(UrlResources):
         super(SoapUrlResources, self).__init__(domain, sandbox, version)
 
     def get_resource_path(self):
-        return SoapUrlResources.RESOURCE_PATH
+        return self.RESOURCE_PATH
 
     def get_full_resource_url(self, instance_url):
         return '{0}{1}'.format(
             instance_url,
-            SoapUrlResources.RESOURCE_PATH.format(version=self.version))
+            self.get_resource_path().format(version=self.version)
+        )
 
 
 class ResourcesName(object):
@@ -66,9 +70,11 @@ class ResourcesName(object):
         'search': '/search/',
     }
 
-    @staticmethod
-    def get_resource_name(name):
-        if name in ResourcesName.__RESOURCES_NAME:
-            return ResourcesName.__RESOURCES_NAME[name]
-        else:
-            raise ValueError('Not a valid name %s' % name)
+    @classmethod
+    def get_resource_name(cls, name):
+        resource = cls.__RESOURCES_NAME.get(name, None)
+
+        if resource is None:
+            raise ValueError('Not a valid name {}'.format(name))
+
+        return resource

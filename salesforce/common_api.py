@@ -1,5 +1,5 @@
 # encoding: utf-8
-from .httpClient import Requests, HTTPConnection
+from .http_client import Requests, HTTPConnection
 from .login import Authentication
 
 
@@ -23,7 +23,7 @@ class SalesForceAPI(object):
     @auth.setter
     def auth(self, auth):
         if not isinstance(auth, Authentication):
-            raise TypeError("Must be a subclass of Authentication!")
+            raise TypeError('Must be a subclass of Authentication!')
 
         self.__auth = auth
 
@@ -34,7 +34,7 @@ class SalesForceAPI(object):
     @httplib.setter
     def httplib(self, httplib):
         if not isinstance(httplib, HTTPConnection):
-            raise TypeError("Must be a subclass of HTTPConnection!")
+            raise TypeError('Must be a subclass of HTTPConnection!')
 
         self.__httplib = httplib
 

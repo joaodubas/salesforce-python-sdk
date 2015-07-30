@@ -1,15 +1,15 @@
-from salesforceSoapApi import SalesforceSoapAPI
-from salesforceRestApi import SalesforceRestAPI
-from version import Version
-from httpClient import HTTPConnection
-from httpClient import Requests
-from urlResources import RestUrlResources, SoapUrlResources
-import utils
+# encoding: utf-8
+from .soap_api import SalesForceSoapAPI
+from .rest_api import SalesForceRestAPI
+from .version import Version
+from .http_client import HTTPConnection, Requests
+from .url_resources import RestUrlResources, SoapUrlResources
+from .utils import validate_boolean_input
 
 
-class Salesforce(object):
+class SalesForce(object):
     def __init__(self, **kwargs):
-        super(Salesforce, self).__init__()
+        super(SalesForce, self).__init__()
 
         self.__api = None
 
@@ -19,11 +19,14 @@ class Salesforce(object):
         self.__version = None
         self.__domain = None
 
-        self.sandbox = kwargs.get('sandbox', False)
-        self.soap = kwargs.get('soap', False)
-        self.httplib = kwargs.get('httplib', Requests())
-        self.domain = kwargs.get('domain', 'test' if self.sandbox else 'login')
-        self.version = kwargs.get('version', Version.get_latest_version(self.httplib))
+        self.sandbox = kwargs.pop('sandbox', False)
+        self.soap = kwargs.pop('soap', False)
+        self.httplib = kwargs.pop('httplib', Requests())
+        self.domain = kwargs.pop('domain', 'test' if self.sandbox else 'login')
+        self.version = kwargs.pop(
+            'version',
+            Version.get_latest_version(self.httplib)
+        )
 
         self.__api = self.__get_api(self.soap)
 
@@ -53,10 +56,16 @@ class Salesforce(object):
 
     def __getattr__(self, name):
         if not name[0].isalpha():
-            return super(Salesforce, self).__getattribute__(name)
+            return super(SalesForce, self).__getattribute__(name)
 
         return SObjectFacade(
-            name, self.__api, self.domain, self.sandbox, self.version, self.soap)
+            name,
+            self.__api,
+            self.domain,
+            self.sandbox,
+            self.version,
+            self.soap
+        )
 
     @property
     def sandbox(self):
@@ -64,7 +73,7 @@ class Salesforce(object):
 
     @sandbox.setter
     def sandbox(self, sandbox):
-        utils.validate_boolean_input(sandbox, 'sanbox')
+        validate_boolean_input(sandbox, 'sanbox')
 
         self.__sandbox = sandbox
 
@@ -78,7 +87,7 @@ class Salesforce(object):
 
     @soap.setter
     def soap(self, soap):
-        utils.validate_boolean_input(soap, 'soap')
+        validate_boolean_input(soap, 'soap')
 
         if self.__api is not None:
             self.__api = self.__get_api(soap)
@@ -131,15 +140,27 @@ class Salesforce(object):
             auth = None if self.__api is None else self.__api.auth
 
             if soap:
-                url_resources = SoapUrlResources(self.domain, self.sandbox, self.version)
-                return SalesforceSoapAPI(url_resources=url_resources,
-                                         httplib=self.httplib,
-                                         auth=auth)
+                url_resources = SoapUrlResources(
+                    self.domain,
+                    self.sandbox,
+                    self.version
+                )
+                return SalesForceSoapAPI(
+                    url_resources=url_resources,
+                    httplib=self.httplib,
+                    auth=auth
+                )
             else:
-                url_resources = RestUrlResources(self.domain, self.sandbox, self.version)
-                return SalesforceRestAPI(url_resources=url_resources,
-                                         httplib=self.httplib,
-                                         auth=auth)
+                url_resources = RestUrlResources(
+                    self.domain,
+                    self.sandbox,
+                    self.version
+                )
+                return SalesForceRestAPI(
+                    url_resources=url_resources,
+                    httplib=self.httplib,
+                    auth=auth
+                )
 
 
 class SObjectFacade(object):
@@ -169,7 +190,14 @@ class SObjectFacade(object):
         return self.__get_api(soap).__getattr__(self.name).post(data, record_id)
 
     def get(self, record_id=None, params=None, soap=None):
-        return self.__get_api(soap).__getattr__(self.name).get(record_id, params)
+        return self.__get_api(
+            soap
+        ).__getattr__(
+            self.name
+        ).get(
+            record_id,
+            params
+        )
 
     def __get_api(self, soap):
         if soap is None:
@@ -179,12 +207,24 @@ class SObjectFacade(object):
             return self.__api
         else:
             if soap:
-                url_resources = SoapUrlResources(self.domain, self.sandbox, self.version)
-                return SalesforceSoapAPI(url_resources=url_resources,
-                                         httplib=self.__api.httplib,
-                                         auth=self.__api.auth)
+                url_resources = SoapUrlResources(
+                    self.domain,
+                    self.sandbox,
+                    self.version
+                )
+                return SalesForceSoapAPI(
+                    url_resources=url_resources,
+                    httplib=self.__api.httplib,
+                    auth=self.__api.auth
+                )
             else:
-                url_resources = RestUrlResources(self.domain, self.sandbox, self.version)
-                return SalesforceRestAPI(url_resources=url_resources,
-                                         httplib=self.__api.httplib,
-                                         auth=self.__api.auth)
+                url_resources = RestUrlResources(
+                    self.domain,
+                    self.sandbox,
+                    self.version
+                )
+                return SalesForceRestAPI(
+                    url_resources=url_resources,
+                    httplib=self.__api.httplib,
+                    auth=self.__api.auth
+                )

@@ -1,5 +1,7 @@
+# encoding:utf-8
 import requests
-from exception import RequestFailed, AuthenticationFailed
+from functools import wraps
+from .exception import RequestFailed, AuthenticationFailed
 
 
 def json_content_headers(access_token):
@@ -21,7 +23,7 @@ def xml_content_headers(length, action):
 
 
 def get_soap_env():
-    return """<?xml version="1.0" encoding="utf-8" ?>
+    return '''<?xml version="1.0" encoding="utf-8" ?>
         <soapenv:Envelope
             xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
             xmlns:urn="urn:partner.soap.sforce.com"
@@ -29,7 +31,7 @@ def get_soap_env():
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             {header}
             {body}
-        </soapenv:Envelope>"""
+        </soapenv:Envelope>'''
 
 
 def get_soap_header():
@@ -118,7 +120,7 @@ def get_soap_update_body(sobject, data):
 
     for item in data:
         if not isinstance(item, list):
-            raise TypeError("'update' require a parameter type 'list of lists'")
+            raise TypeError('`update` require a parameter type `list of lists`')
 
         update_body += '<urn:sObjects xsi:type="urn1:{0}"> \n'.format(sobject)
         update_body += '<urn:Id>{0}</urn:Id>'.format(item[0])
@@ -140,12 +142,14 @@ def verify_response(response):
 
 
 def send_request(method, httplib, url, headers, **kwargs):
-    print method + ": Sending request to " + url + "\n"
+    print '{}: Sending request to {}\n'.format(method, url)
 
-    response = httplib(method,
-                       url,
-                       headers=headers,
-                       **kwargs)
+    response = httplib(
+        method,
+        url,
+        headers=headers,
+        **kwargs
+    )
     try:
         verify_response(response)
     except RequestFailed:
@@ -160,27 +164,25 @@ def send_request(method, httplib, url, headers, **kwargs):
 def get_request_url(url, instance_url, resource_url):
     if url.startswith(instance_url + resource_url):
         return url
-
     elif url.startswith(resource_url):
         return '{0}{1}'.format(instance_url, url)
-
     return '{0}{1}{2}'.format(instance_url, resource_url, url)
 
 
 def get_element_by_name(xml_string, element_name):
     elements = xml_string.getElementsByTagName(element_name)
 
-    if len(elements) > 0:
+    if len(elements):
         return elements.item(0).firstChild.nodeValue
 
     return None
 
 
 def authenticate(func):
+    @wraps(func)
     def authenticate_and_call(self, *args, **kwargs):
         if self.auth is None or not self.auth.is_authenticated():
-            raise AuthenticationFailed("You need to first authentificate!")
-
+            raise AuthenticationFailed('You need to first authenticate!')
         return func(self, *args, **kwargs)
 
     return authenticate_and_call
@@ -188,4 +190,4 @@ def authenticate(func):
 
 def validate_boolean_input(value, name):
     if value not in (True, False):
-        raise TypeError(name + ' should be True or False')
+        raise TypeError('{} should be True or False'.format(name))

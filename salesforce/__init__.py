@@ -1,2 +1,3 @@
-from salesforce.api import Salesforce
-from salesforce.exception import RequestFailed
+# encoding: utf-8
+from .api import SalesForce
+from .exception import RequestFailed

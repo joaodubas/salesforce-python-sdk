@@ -1,17 +1,34 @@
-from common_api import SalesForceAPI
-from login import LoginWithSoapAPI
-from sObject import SObject
-import utils
+# encoding: utf-8
 import xml.dom.minidom
+
+from .common_api import SalesForceAPI
+from .login import LoginWithSoapAPI
+from .s_object import SObject
+from .utils import (
+    authenticate as u_auth,
+    xml_content_headers,
+    get_element_by_name,
+    get_soap_query_body,
+    get_soap_query_more_body,
+    get_soap_search_body,
+    get_soap_describe_body,
+    get_soap_create_body,
+    get_soap_update_body,
+    get_soap_delete_body,
+    soap_request_header,
+    get_request_url,
+    send_request
+)
 
 
 class SalesForceSoapAPI(SalesForceAPI):
-    def __init__(self,
-                 httplib,
-                 url_resources,
-                 auth=None):
+    def __init__(
+            self,
+            httplib,
+            url_resources,
+            auth=None
+    ):
         super(SalesForceSoapAPI, self).__init__(url_resources, httplib, auth)
-
         self.__login_api = None
 
     def authenticate(self, **kwargs):
@@ -22,95 +39,97 @@ class SalesForceSoapAPI(SalesForceAPI):
 
         return self.__login_api.authenticate()
 
-    @utils.authenticate
+    @u_auth
     def query(self, query_string):
-        return self.post(query_string, SalesForceSoapAPI.Action.QUERY)
+        return self.post(query_string, self.Action.QUERY)
 
-    @utils.authenticate
+    @u_auth
     def query_all(self, query_string):
-        response = self.post(query_string, SalesForceSoapAPI.Action.QUERYALL)
+        response = self.post(query_string, self.Action.QUERYALL)
         xml_resp_value = xml.dom.minidom.parseString(response.text)
 
-        def do_query_all(xml_response_value):
-            done = utils.get_element_by_name(xml_response_value, 'done')
-
+        def do_query_all(resp):
+            done = get_element_by_name(resp, 'done')
             if done:
                 return response
             else:
-                query_locator = utils.get_element_by_name(xml_response_value, 'queryLocator')
-
+                query_locator = get_element_by_name(resp, 'queryLocator')
                 result = self.query_more(query_locator)
                 xml_result_value = xml.dom.minidom.parseString(result.text)
 
-                done = utils.get_element_by_name(xml_result_value, 'done')
-                total_size = utils.get_element_by_name(xml_result_value, 'totalSize')
-                records = utils.get_element_by_name(xml_result_value, 'records')
+                done = get_element_by_name(xml_result_value, 'done')
+                done_node = resp.getElementsByTagName('done').item(0)
+                done_node.firstChild.nodeValue = done
 
-                xml_response_value.getElementsByTagName('done').item(0).firstChild.nodeValue = done
-                xml_response_value.getElementsByTagName('totalSize').item(0).firstChild.nodeValue += total_size
-                xml_response_value.getElementsByTagName('records').appendChild(records)
+                total_size = get_element_by_name(xml_result_value, 'totalSize')
+                total_size_node = resp.getElementsByTagName('totalSize').item(0)
+                total_size_node.firstChild.nodeValue += total_size
 
-                return do_query_all(xml_response_value)
+                records = get_element_by_name(xml_result_value, 'records')
+                records_node = resp.getElementsByTagName('records')
+                records_node.appendChild(records)
+
+                return do_query_all(resp)
 
         return do_query_all(xml_resp_value)
 
-    @utils.authenticate
+    @u_auth
     def query_more(self, query_string):
-        return self.post(query_string, SalesForceSoapAPI.Action.QUERYMORE)
+        return self.post(query_string, self.Action.QUERYMORE)
 
-    @utils.authenticate
+    @u_auth
     def search(self, search_string):
-        return self.post(search_string, SalesForceSoapAPI.Action.SEARCH)
+        return self.post(search_string, self.Action.SEARCH)
 
-    @utils.authenticate
+    @u_auth
     def quick_search(self, search_string):
         return self.search('FIND {%s}' % search_string)
 
-    @utils.authenticate
+    @u_auth
     def post(self, data, action):
-        body = ''
+        strategies = {
+            self.Action.QUERY: get_soap_query_body,
+            self.Action.QUERYMORE: get_soap_query_more_body,
+            self.Action.QUERYALL: get_soap_query_body,
+            self.Action.SEARCH: get_soap_search_body
+        }
 
-        if action == SalesForceSoapAPI.Action.QUERY:
-            body = query_body = utils.get_soap_query_body(data)
+        body = strategies.get(action, lambda *a, **kw: None)(data)
+        if body is None:
+            raise ValueError('`action` {} is not supported!'.format(action))
 
-        elif action == SalesForceSoapAPI.Action.QUERYMORE:
-            body = utils.get_soap_query_more_body(data)
-
-        elif action == SalesForceSoapAPI.Action.QUERYALL:
-            body = utils.get_soap_query_body(data)
-
-        elif action == SalesForceSoapAPI.Action.SEARCH:
-            body = utils.get_soap_search_body(data)
-
-        else:
-            raise ValueError("'action' " + action + " is not supported!")
-
-        request_body = utils.soap_request_header().format(
+        request_body = soap_request_header().format(
             access_token=self.auth.access_token,
             method=action,
-            request=body)
+            request=body
+        )
 
         post_url = self.url_resources.get_full_resource_url(
-            self.auth.instance_url)
+            self.auth.instance_url
+        )
 
-        return self.__send_request('POST',
-                                   post_url,
-                                   action,
-                                   data=request_body)
+        return self.__send_request(
+            'POST',
+            post_url,
+            action,
+            data=request_body
+        )
 
-    @utils.authenticate
+    @u_auth
     def get(self, get_url, params=None):
         pass
 
-    @utils.authenticate
+    @u_auth
     def __getattr__(self, name):
         if not name[0].isalpha():
             return object.__getattribute__(self, name)
 
-        return SoapSObject(name,
-                           self.httplib,
-                           self.auth,
-                           self.url_resources)
+        return SoapSObject(
+            name,
+            self.httplib,
+            self.auth,
+            self.url_resources
+        )
 
     def __getstate__(self):
         return self.__dict__
@@ -119,15 +138,21 @@ class SalesForceSoapAPI(SalesForceAPI):
         self.__dict__.update(d)
 
     def __send_request(self, method, url, action, **kwargs):
-        headers = utils.xml_content_headers(len(kwargs['data']), action)
+        headers = xml_content_headers(len(kwargs['data']), action)
 
-        request_url = utils.get_request_url(url, self.auth.instance_url, self.url_resources.get_resource_url())
+        request_url = get_request_url(
+            url,
+            self.auth.instance_url,
+            self.url_resources.get_resource_url()
+        )
 
-        return utils.send_request(method,
-                                  self.httplib,
-                                  request_url,
-                                  headers,
-                                  **kwargs)
+        return send_request(
+            method,
+            self.httplib,
+            request_url,
+            headers,
+            **kwargs
+        )
 
     class Action(object):
         QUERY = 'query'
@@ -142,82 +167,92 @@ class SoapSObject(SObject):
 
         self.__name = name
 
-    @utils.authenticate
+    @u_auth
     def describe(self):
-        return self.post(None, SoapSObject.Action.DESCRIBE)
+        return self.post(None, self.Action.DESCRIBE)
 
-    @utils.authenticate
+    @u_auth
     def create(self, data):
         if not isinstance(data, list):
-            raise TypeError("'create' require a parameter type 'list'")
+            raise TypeError('`create` require a parameter type `list`')
 
-        return self.post(data, SoapSObject.Action.CREATE)
+        return self.post(data, self.Action.CREATE)
 
-    @utils.authenticate
+    @u_auth
     def update(self, data):
         if not isinstance(data, list):
-            raise TypeError("'update' require a parameter type 'list of lists'")
+            raise TypeError('`update` require a parameter type `list of lists`')
 
-        return self.post(data, SoapSObject.Action.UPDATE)
+        return self.post(data, self.Action.UPDATE)
 
-    @utils.authenticate
+    @u_auth
     def delete(self, record_ids):
         if not isinstance(record_ids, list):
-            raise TypeError("'update' require a parameter type 'list of lists'")
+            raise TypeError('`update` require a parameter type `list of lists`')
 
         return self.post(record_ids, SoapSObject.Action.DELETE)
 
-    @utils.authenticate
+    @u_auth
     def post(self, data, action=None):
         if action is None:
-            raise ValueError("'action' is required")
+            raise ValueError('`action` is required')
 
-        if action != SoapSObject.Action.DESCRIBE and not isinstance(data, list):
-            raise TypeError("'create' require a parameter type 'list'")
+        if action != self.Action.DESCRIBE and not isinstance(data, list):
+            raise TypeError('`create` require a parameter type `list`')
 
         body = ''
         if action == SoapSObject.Action.DESCRIBE:
-            body = utils.get_soap_describe_body(self.__name)
+            body = get_soap_describe_body(self.__name)
 
         elif action == SoapSObject.Action.CREATE:
-            body = utils.get_soap_create_body(self.__name, data)
+            body = get_soap_create_body(self.__name, data)
 
         elif action == SoapSObject.Action.UPDATE:
-            body = utils.get_soap_update_body(self.__name, data)
+            body = get_soap_update_body(self.__name, data)
 
         elif action == SoapSObject.Action.DELETE:
-            body = utils.get_soap_delete_body(data)
+            body = get_soap_delete_body(data)
 
         else:
-            raise ValueError("'action' " + action + " is not supported!")
+            raise ValueError('`action` {} is not supported!'.format(action))
 
-        request_body = utils.soap_request_header().format(
+        request_body = soap_request_header().format(
             access_token=self.auth.access_token,
             method=action,
-            request=body)
+            request=body
+        )
 
         post_url = self.url_resources.get_full_resource_url(
-            self.auth.instance_url)
+            self.auth.instance_url
+        )
 
-        return self.__send_request('POST',
-                                   post_url,
-                                   action,
-                                   data=request_body)
+        return self.__send_request(
+            'POST',
+            post_url,
+            action,
+            data=request_body
+        )
 
-    @utils.authenticate
+    @u_auth
     def get(self, record_id=None, params=None):
         pass
 
     def __send_request(self, method, url, action, **kwargs):
-        headers = utils.xml_content_headers(len(kwargs['data']), action)
+        headers = xml_content_headers(len(kwargs['data']), action)
 
-        request_url = utils.get_request_url(url, self.auth.instance_url, self.url_resources.get_resource_url())
+        request_url = get_request_url(
+            url,
+            self.auth.instance_url,
+            self.url_resources.get_resource_url()
+        )
 
-        return utils.send_request(method,
-                                  self.httplib,
-                                  request_url,
-                                  headers,
-                                  **kwargs)
+        return send_request(
+            method,
+            self.httplib,
+            request_url,
+            headers,
+            **kwargs
+        )
 
     class Action(object):
         DESCRIBE = 'describeSObject'
