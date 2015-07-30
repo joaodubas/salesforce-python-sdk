@@ -1,18 +1,18 @@
 from login import LoginWithRestAPI
 from urlResources import ResourcesName
-from salesforceApi import SalesforceAPI
+from common_api import SalesForceAPI
 from exception import AuthenticationFailed
 from sObject import SObject
 import utils
 import json
 
 
-class SalesforceRestAPI(SalesforceAPI):
+class SalesForceRestAPI(SalesForceAPI):
     def __init__(self,
                  httplib,
                  url_resources,
                  auth=None):
-        super(SalesforceRestAPI, self).__init__(url_resources, httplib, auth)
+        super(SalesForceRestAPI, self).__init__(url_resources, httplib, auth)
 
         self.__login_api = None
 

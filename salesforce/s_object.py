@@ -1,3 +1,6 @@
+# encoding: utf-8
+
+
 class SObject(object):
     def __init__(self, httplib, auth, url_resources):
         super(SObject, self).__init__()

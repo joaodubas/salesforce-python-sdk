@@ -1,11 +1,11 @@
-from login import Authentication
-from httpClient import Requests
-from httpClient import HTTPConnection
+# encoding: utf-8
+from .httpClient import Requests, HTTPConnection
+from .login import Authentication
 
 
-class SalesforceAPI(object):
+class SalesForceAPI(object):
     def __init__(self, url_resources, httplib=Requests(),  auth=None):
-        super(SalesforceAPI, self).__init__()
+        super(SalesForceAPI, self).__init__()
 
         self.__httplib = httplib
         self.__url_resources = url_resources

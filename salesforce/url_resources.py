@@ -1,3 +1,6 @@
+# encoding: utf-8
+
+
 class UrlResources(object):
     def __init__(self, domain, sandbox, version):
         super(UrlResources, self).__init__()

@@ -1,16 +1,16 @@
-from salesforceApi import SalesforceAPI
+from common_api import SalesForceAPI
 from login import LoginWithSoapAPI
 from sObject import SObject
 import utils
 import xml.dom.minidom
 
 
-class SalesforceSoapAPI(SalesforceAPI):
+class SalesForceSoapAPI(SalesForceAPI):
     def __init__(self,
                  httplib,
                  url_resources,
                  auth=None):
-        super(SalesforceSoapAPI, self).__init__(url_resources, httplib, auth)
+        super(SalesForceSoapAPI, self).__init__(url_resources, httplib, auth)
 
         self.__login_api = None
 
@@ -24,11 +24,11 @@ class SalesforceSoapAPI(SalesforceAPI):
 
     @utils.authenticate
     def query(self, query_string):
-        return self.post(query_string, SalesforceSoapAPI.Action.QUERY)
+        return self.post(query_string, SalesForceSoapAPI.Action.QUERY)
 
     @utils.authenticate
     def query_all(self, query_string):
-        response = self.post(query_string, SalesforceSoapAPI.Action.QUERYALL)
+        response = self.post(query_string, SalesForceSoapAPI.Action.QUERYALL)
         xml_resp_value = xml.dom.minidom.parseString(response.text)
 
         def do_query_all(xml_response_value):
@@ -56,11 +56,11 @@ class SalesforceSoapAPI(SalesforceAPI):
 
     @utils.authenticate
     def query_more(self, query_string):
-        return self.post(query_string, SalesforceSoapAPI.Action.QUERYMORE)
+        return self.post(query_string, SalesForceSoapAPI.Action.QUERYMORE)
 
     @utils.authenticate
     def search(self, search_string):
-        return self.post(search_string, SalesforceSoapAPI.Action.SEARCH)
+        return self.post(search_string, SalesForceSoapAPI.Action.SEARCH)
 
     @utils.authenticate
     def quick_search(self, search_string):
@@ -70,16 +70,16 @@ class SalesforceSoapAPI(SalesforceAPI):
     def post(self, data, action):
         body = ''
 
-        if action == SalesforceSoapAPI.Action.QUERY:
+        if action == SalesForceSoapAPI.Action.QUERY:
             body = query_body = utils.get_soap_query_body(data)
 
-        elif action == SalesforceSoapAPI.Action.QUERYMORE:
+        elif action == SalesForceSoapAPI.Action.QUERYMORE:
             body = utils.get_soap_query_more_body(data)
 
-        elif action == SalesforceSoapAPI.Action.QUERYALL:
+        elif action == SalesForceSoapAPI.Action.QUERYALL:
             body = utils.get_soap_query_body(data)
 
-        elif action == SalesforceSoapAPI.Action.SEARCH:
+        elif action == SalesForceSoapAPI.Action.SEARCH:
             body = utils.get_soap_search_body(data)
 
         else:
