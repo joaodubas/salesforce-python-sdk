@@ -1,0 +1,8 @@
+---
+sf:
+  image: joaodubas/salesforce-python-sdk
+  hostname: salesforce
+  ports:
+    - "20022:22"
+  volumes:
+    - ../:/opt/code
