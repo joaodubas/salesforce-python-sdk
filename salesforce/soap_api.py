@@ -210,20 +210,15 @@ class SoapSObject(SObject):
         if action != self.Action.DESCRIBE and not isinstance(data, list):
             raise TypeError('`create` require a parameter type `list`')
 
-        body = ''
-        if action == SoapSObject.Action.DESCRIBE:
-            body = get_soap_describe_body(self.__name)
+        strategies = {
+            self.Action.DESCRIBE: get_soap_describe_body,
+            self.Action.CREATE: get_soap_create_body,
+            self.Action.UPDATE: get_soap_update_body,
+            self.Action.DELETE: get_soap_delete_body,
+        }
 
-        elif action == SoapSObject.Action.CREATE:
-            body = get_soap_create_body(self.__name, data)
-
-        elif action == SoapSObject.Action.UPDATE:
-            body = get_soap_update_body(self.__name, data)
-
-        elif action == SoapSObject.Action.DELETE:
-            body = get_soap_delete_body(data)
-
-        else:
+        body = strategies.get(action, lambda d: None)(data)
+        if body is None:
             raise ValueError('`action` {} is not supported!'.format(action))
 
         request_body = soap_request_header().format(
