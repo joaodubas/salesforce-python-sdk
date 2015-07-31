@@ -146,14 +146,6 @@ class SalesForceRestAPI(SalesForceAPI):
             self.url_resources
         )
 
-    def __getstate__(self):
-        """__getstate__ -- """
-        return self.__dict__
-
-    def __setstate__(self, d):
-        """__setstate__ -- """
-        self.__dict__.update(d)
-
     def __send_request(self, method, url, **kwargs):
         """__send_request -- """
         headers = json_content_headers(self.auth.access_token)

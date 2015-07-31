@@ -143,14 +143,6 @@ class SalesForce(object):
         if self.__api is not None:
             self.__api.url_resources.version = round_version
 
-    def __getstate__(self):
-        """__getstate__ -- """
-        return self.__dict__
-
-    def __setstate__(self, d):
-        """__setstate__ -- """
-        self.__dict__.update(d)
-
     def __get_api(self, soap):
         """__get_api -- """
         if soap is None:
