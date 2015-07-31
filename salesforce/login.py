@@ -15,7 +15,9 @@ from .utils import (
 
 
 class Authentication(object):
+    """Authentication -- """
     def __init__(self, access_token='', instance_url=''):
+        """__init -- """
         super(Authentication, self).__init__()
 
         self.__access_token = access_token
@@ -23,18 +25,23 @@ class Authentication(object):
 
     @property
     def access_token(self):
+        """access_token -- """
         return self.__access_token
 
     @property
     def instance_url(self):
+        """instance_url -- """
         return self.__instance_url
 
     def is_authenticated(self):
+        """is_authenticated -- """
         return self.access_token != '' and self.instance_url != ''
 
 
 class Login(object):
+    """Login -- """
     def __init__(self, httplib, url_resources):
+        """__init__ -- """
         super(Login, self).__init__()
 
         self.httplib = httplib
@@ -42,11 +49,13 @@ class Login(object):
 
 
 class LoginWithRestAPI(Login):
+    """LoginWithRestAPI -- """
     AUTH_SITE = 'https://{domain}.salesforce.com'
     TOKEN_PATH = '/services/oauth2/token'
     AUTH_PATH = '/services/oauth2/authorize'
 
     def __init__(self, httplib, url_resources, **kwargs):
+        """__init__ -- """
         super(LoginWithRestAPI, self).__init__(httplib, url_resources)
 
         self.__validate_kwargs(**kwargs)
@@ -63,6 +72,7 @@ class LoginWithRestAPI(Login):
             self.redirect = False
 
     def get_auth_uri(self):
+        """get_auth_uri -- """
         headers = {'content-type': 'application/x-www-form-urlencoded'}
         endpoint_url = self.__get_auth_endpoint()
         params = self.__get_server_or_user_params()
@@ -70,6 +80,7 @@ class LoginWithRestAPI(Login):
         return endpoint_url + '?' + urllib.urlencode(params)
 
     def authenticate(self, **kwargs):
+        """authenticate -- """
         headers = {'content-type': 'application/x-www-form-urlencoded'}
         endpoint_url = self.__get_token_endpoint()
 
@@ -98,6 +109,7 @@ class LoginWithRestAPI(Login):
         return Authentication(access_token, instance_url)
 
     def __get_token_endpoint(self):
+        """__get_token_endpoint -- """
         domain_name = self.url_resources.domain
 
         return '{0}{1}'.format(
@@ -105,6 +117,7 @@ class LoginWithRestAPI(Login):
             self.TOKEN_PATH)
 
     def __get_auth_endpoint(self):
+        """__get_auth_endpoint -- """
         domain_name = self.url_resources.domain
 
         return '{0}{1}'.format(
@@ -113,6 +126,7 @@ class LoginWithRestAPI(Login):
 
     @staticmethod
     def __validate_kwargs(**kwargs):
+        """__validate_kwargs -- """
         keys = ['client_id', 'client_secret']
 
         if 'response_type' in kwargs:
@@ -131,6 +145,7 @@ class LoginWithRestAPI(Login):
             )
 
     def __get_token_using_password_params(self):
+        """__get_token_using_password_params -- """
         return {
             'grant_type': 'password',
             'client_id': self.client_id,
@@ -140,6 +155,7 @@ class LoginWithRestAPI(Login):
         }
 
     def __get_token_using_code_params(self, code):
+        """__get_token_using_code_params -- """
         return {
             'grant_type': 'authorization_code',
             'client_id': self.client_id,
@@ -149,6 +165,7 @@ class LoginWithRestAPI(Login):
         }
 
     def __get_server_or_user_params(self):
+        """__get_server_or_user_params -- """
         return {
             'response_type': self.response_type,
             'client_id': self.client_id,
@@ -157,9 +174,11 @@ class LoginWithRestAPI(Login):
 
 
 class LoginWithSoapAPI(Login):
+    """LoginWithSoapAPI -- """
     AUTH_SITE = "https://{domain}.salesforce.com/services/Soap/u/{version}"
 
     def __init__(self, httplib, url_resources, **kwargs):
+        """__init__ -- """
         super(LoginWithSoapAPI, self).__init__(httplib, url_resources)
 
         self.__validate_kwargs(**kwargs)
@@ -168,6 +187,7 @@ class LoginWithSoapAPI(Login):
         self.password = kwargs['password']
 
     def authenticate(self):
+        """authenticate -- """
         login_url = self.__get_token_endpoint()
         data = self.__get_params()
         headers = xml_content_headers(len(data), 'login')
@@ -188,6 +208,7 @@ class LoginWithSoapAPI(Login):
         return Authentication(access_token, instance_url)
 
     def __get_token_endpoint(self):
+        """__get_token_endpoint -- """
         domain_name = self.url_resources.domain
 
         return self.AUTH_SITE.format(
@@ -196,11 +217,13 @@ class LoginWithSoapAPI(Login):
 
     @staticmethod
     def __validate_kwargs(**kwargs):
+        """__validate_kwargs -- """
         keys = ['username', 'password']
         if any([key not in kwargs for key in keys]):
             raise ValueError('Required fields: `username`, and `password`')
 
     def __get_params(self):
+        """__get_params -- """
         login_body = get_soap_login_body(
             self.username,
             self.password

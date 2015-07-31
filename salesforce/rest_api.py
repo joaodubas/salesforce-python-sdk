@@ -15,16 +15,14 @@ from .utils import (
 
 
 class SalesForceRestAPI(SalesForceAPI):
-    def __init__(
-            self,
-            httplib,
-            url_resources,
-            auth=None
-    ):
+    """SalesForceRestAPI -- """
+    def __init__(self, httplib, url_resources, auth=None):
+        """__init__ -- """
         super(SalesForceRestAPI, self).__init__(url_resources, httplib, auth)
         self.__login_api = None
 
     def authenticate(self, **kwargs):
+        """authenticate -- """
         if 'code' in kwargs:
             if not self.__login_api:
                 raise AuthenticationFailed(
@@ -41,6 +39,7 @@ class SalesForceRestAPI(SalesForceAPI):
         return self.__login_api.authenticate(**kwargs)
 
     def get_auth_uri(self, **kwargs):
+        """get_auth_uri -- """
         self.__login_api = LoginWithRestAPI(
             self.httplib,
             self.url_resources,
@@ -51,6 +50,7 @@ class SalesForceRestAPI(SalesForceAPI):
 
     @u_auth
     def query(self, query_string):
+        """query -- """
         query_url = self.url_resources.get_full_resource_url(
             self.auth.instance_url,
             ResourcesName.get_resource_name("query"))
@@ -60,6 +60,7 @@ class SalesForceRestAPI(SalesForceAPI):
 
     @u_auth
     def query_all(self, query_string):
+        """query_all -- """
         query_url = self.url_resources.get_full_resource_url(
             self.auth.instance_url,
             ResourcesName.get_resource_name("queryAll")
@@ -84,6 +85,7 @@ class SalesForceRestAPI(SalesForceAPI):
 
     @u_auth
     def query_more(self, url):
+        """query_more -- """
         query_url = self.url_resources.get_full_resource_url(
             self.auth.instance_url,
             ResourcesName.get_resource_name("query")
@@ -98,6 +100,7 @@ class SalesForceRestAPI(SalesForceAPI):
 
     @u_auth
     def search(self, search_string):
+        """search -- """
         search_url = self.url_resources.get_full_resource_url(
             self.auth.instance_url,
             ResourcesName.get_resource_name("search")
@@ -109,10 +112,12 @@ class SalesForceRestAPI(SalesForceAPI):
 
     @u_auth
     def quick_search(self, search_string):
+        """quick_search -- """
         return self.search('FIND {%s}' % search_string)
 
     @u_auth
     def get(self, get_url, params=None):
+        """get -- """
         return self.__send_request(
             'GET',
             get_url,
@@ -121,6 +126,7 @@ class SalesForceRestAPI(SalesForceAPI):
 
     @u_auth
     def post(self, post_url, data):
+        """post -- """
         return self.__send_request(
             'POST',
             post_url,
@@ -129,6 +135,7 @@ class SalesForceRestAPI(SalesForceAPI):
 
     @u_auth
     def __getattr__(self, name):
+        """__getattr__ -- """
         if not name[0].isalpha():
             return object.__getattribute__(self, name)
 
@@ -140,12 +147,15 @@ class SalesForceRestAPI(SalesForceAPI):
         )
 
     def __getstate__(self):
+        """__getstate__ -- """
         return self.__dict__
 
     def __setstate__(self, d):
+        """__setstate__ -- """
         self.__dict__.update(d)
 
     def __send_request(self, method, url, **kwargs):
+        """__send_request -- """
         headers = json_content_headers(self.auth.access_token)
 
         request_url = get_request_url(
@@ -164,21 +174,26 @@ class SalesForceRestAPI(SalesForceAPI):
 
 
 class RestSObject(SObject):
+    """RestSObject -- """
     def __init__(self, name, httplib, auth, url_resources):
+        """__init__ -- """
         super(RestSObject, self).__init__(httplib, auth, url_resources)
 
         self.__name = name
 
     @u_auth
     def describe(self):
+        """describe -- """
         return self.get('/describe')
 
     @u_auth
     def create(self, data):
+        """create -- """
         return self.post(data)
 
     @u_auth
     def update(self, data):
+        """update -- """
         if not isinstance(data, list):
             raise TypeError('`update` require a parameter type `list`')
 
@@ -202,6 +217,7 @@ class RestSObject(SObject):
 
     @u_auth
     def delete(self, record_id):
+        """delete -- """
         delete_url = '{0}/{1}'.format(
             self.url_resources.get_resource_sobject_url(
                 self.auth.instance_url,
@@ -218,6 +234,7 @@ class RestSObject(SObject):
 
     @u_auth
     def post(self, data, record_id=None):
+        """post -- """
         post_url = self.url_resources.get_resource_sobject_url(
             self.auth.instance_url,
             ResourcesName.get_resource_name('sobject'),
@@ -235,6 +252,7 @@ class RestSObject(SObject):
 
     @u_auth
     def get(self, url=None, params=None):
+        """get -- """
         get_url = self.url_resources.get_resource_sobject_url(
             self.auth.instance_url,
             ResourcesName.get_resource_name('sobject'),
@@ -251,6 +269,7 @@ class RestSObject(SObject):
         )
 
     def __send_request(self, method, url, **kwargs):
+        """__send_request -- """
         headers = json_content_headers(self.auth.access_token)
 
         request_url = get_request_url(

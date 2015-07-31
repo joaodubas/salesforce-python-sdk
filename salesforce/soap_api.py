@@ -22,16 +22,14 @@ from .utils import (
 
 
 class SalesForceSoapAPI(SalesForceAPI):
-    def __init__(
-            self,
-            httplib,
-            url_resources,
-            auth=None
-    ):
+    """SalesForceSoapAPI -- """
+    def __init__(self, httplib, url_resources, auth=None):
+        """__init__ -- """
         super(SalesForceSoapAPI, self).__init__(url_resources, httplib, auth)
         self.__login_api = None
 
     def authenticate(self, **kwargs):
+        """authenticate -- """
         self.__login_api = LoginWithSoapAPI(
             self.httplib,
             self.url_resources,
@@ -41,10 +39,12 @@ class SalesForceSoapAPI(SalesForceAPI):
 
     @u_auth
     def query(self, query_string):
+        """query -- """
         return self.post(query_string, self.Action.QUERY)
 
     @u_auth
     def query_all(self, query_string):
+        """query_all -- """
         response = self.post(query_string, self.Action.QUERYALL)
         xml_resp_value = xml.dom.minidom.parseString(response.text)
 
@@ -75,18 +75,22 @@ class SalesForceSoapAPI(SalesForceAPI):
 
     @u_auth
     def query_more(self, query_string):
+        """query_more -- """
         return self.post(query_string, self.Action.QUERYMORE)
 
     @u_auth
     def search(self, search_string):
+        """search -- """
         return self.post(search_string, self.Action.SEARCH)
 
     @u_auth
     def quick_search(self, search_string):
+        """quick_search -- """
         return self.search('FIND {%s}' % search_string)
 
     @u_auth
     def post(self, data, action):
+        """post -- """
         strategies = {
             self.Action.QUERY: get_soap_query_body,
             self.Action.QUERYMORE: get_soap_query_more_body,
@@ -117,10 +121,12 @@ class SalesForceSoapAPI(SalesForceAPI):
 
     @u_auth
     def get(self, get_url, params=None):
+        """get -- """
         pass
 
     @u_auth
     def __getattr__(self, name):
+        """__getattr__ -- """
         if not name[0].isalpha():
             return object.__getattribute__(self, name)
 
@@ -132,12 +138,15 @@ class SalesForceSoapAPI(SalesForceAPI):
         )
 
     def __getstate__(self):
+        """__getstate__ -- """
         return self.__dict__
 
     def __setstate__(self, d):
+        """__setstate__ -- """
         self.__dict__.update(d)
 
     def __send_request(self, method, url, action, **kwargs):
+        """__send_request -- """
         headers = xml_content_headers(len(kwargs['data']), action)
 
         request_url = get_request_url(
@@ -155,6 +164,7 @@ class SalesForceSoapAPI(SalesForceAPI):
         )
 
     class Action(object):
+        """Action -- """
         QUERY = 'query'
         QUERYALL = 'queryAll'
         QUERYMORE = 'queryMore'
@@ -162,7 +172,9 @@ class SalesForceSoapAPI(SalesForceAPI):
 
 
 class SoapSObject(SObject):
+    """SoapSObject -- """
     def __init__(self, name, httplib, auth, url_resources):
+        """__init__ -- """
         super(SoapSObject, self).__init__(httplib, auth, url_resources)
 
         self.__name = name
@@ -193,10 +205,8 @@ class SoapSObject(SObject):
         return self.post(record_ids, SoapSObject.Action.DELETE)
 
     @u_auth
-    def post(self, data, action=None):
-        if action is None:
-            raise ValueError('`action` is required')
-
+    def post(self, data, action):
+        """post -- """
         if action != self.Action.DESCRIBE and not isinstance(data, list):
             raise TypeError('`create` require a parameter type `list`')
 
@@ -235,9 +245,11 @@ class SoapSObject(SObject):
 
     @u_auth
     def get(self, record_id=None, params=None):
+        """get -- """
         pass
 
     def __send_request(self, method, url, action, **kwargs):
+        """_send_request -- """
         headers = xml_content_headers(len(kwargs['data']), action)
 
         request_url = get_request_url(
@@ -255,6 +267,7 @@ class SoapSObject(SObject):
         )
 
     class Action(object):
+        """Action -- """
         DESCRIBE = 'describeSObject'
         CREATE = 'create'
         DELETE = 'delete'
