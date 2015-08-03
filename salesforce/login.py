@@ -38,6 +38,24 @@ class Authentication(object):
         return self.access_token != '' and self.instance_url != ''
 
 
+class Unauthenticated(Authentication):
+    """Unauthenticated -- Dummy Authentication implementation that isn't
+    authenticated.
+
+    """
+    def __init__(self, access_token='', instance_url=''):
+        super(Unauthenticated, self).__init__(access_token, instance_url)
+
+    def is_authenticated(self):
+        """is_authenticated -- Verify if this instance is authenticated.
+
+        Returns:
+            (False): any instance of this class can't be authenticated.
+
+        """
+        return False
+
+
 class Login(object):
     """Login -- """
     def __init__(self, httplib, url_resources):
