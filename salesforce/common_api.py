@@ -1,11 +1,29 @@
 # encoding: utf-8
 from .http_client import Requests, HTTPConnection
-from .login import Authentication
+from .login import Authentication, Unauthenticated
 
 
 class SalesForceAPI(object):
-    """SalesForceAPI -- """
-    def __init__(self, url_resources, httplib=Requests(), auth=None):
+    """SalesForceAPI -- Interface for SalesForce API, any concrete
+    implementation must implement the methods defined in this class.
+
+    Attrs:
+        url_resources (.url_resources.UrlResources): url resource
+            representation.
+        httplib (HTTPConnection): http library used to make requests against a
+            SalesForce API. This parameter is optional, and defaults to
+            Requests.
+        auth (.login.Authentication): authentication details for current
+            session. This parameter is optional, and defaults to Unauthenticated
+            instance.
+
+    """
+    def __init__(
+            self,
+            url_resources,
+            httplib=Requests(),
+            auth=Unauthenticated()
+    ):
         """__init__ -- """
         super(SalesForceAPI, self).__init__()
 
