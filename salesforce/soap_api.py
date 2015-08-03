@@ -5,7 +5,7 @@ from .common_api import SalesForceAPI
 from .login import LoginWithSoapAPI
 from .s_object import SObject
 from .utils import (
-    authenticate as u_auth,
+    required_auth,
     xml_content_headers,
     get_element_by_name,
     get_soap_query_body,
@@ -37,12 +37,12 @@ class SalesForceSoapAPI(SalesForceAPI):
 
         return self.__login_api.authenticate()
 
-    @u_auth
+    @required_auth
     def query(self, query_string):
         """query -- """
         return self.post(query_string, self.Action.QUERY)
 
-    @u_auth
+    @required_auth
     def query_all(self, query_string):
         """query_all -- """
         response = self.post(query_string, self.Action.QUERYALL)
@@ -73,22 +73,22 @@ class SalesForceSoapAPI(SalesForceAPI):
 
         return do_query_all(xml_resp_value)
 
-    @u_auth
+    @required_auth
     def query_more(self, query_string):
         """query_more -- """
         return self.post(query_string, self.Action.QUERYMORE)
 
-    @u_auth
+    @required_auth
     def search(self, search_string):
         """search -- """
         return self.post(search_string, self.Action.SEARCH)
 
-    @u_auth
+    @required_auth
     def quick_search(self, search_string):
         """quick_search -- """
         return self.search('FIND {%s}' % search_string)
 
-    @u_auth
+    @required_auth
     def post(self, data, action):
         """post -- """
         strategies = {
@@ -119,12 +119,12 @@ class SalesForceSoapAPI(SalesForceAPI):
             data=request_body
         )
 
-    @u_auth
+    @required_auth
     def get(self, get_url, params=None):
         """get -- """
         pass
 
-    @u_auth
+    @required_auth
     def __getattr__(self, name):
         """__getattr__ -- """
         if not name[0].isalpha():
@@ -171,32 +171,32 @@ class SoapSObject(SObject):
 
         self.__name = name
 
-    @u_auth
+    @required_auth
     def describe(self):
         return self.post(None, self.Action.DESCRIBE)
 
-    @u_auth
+    @required_auth
     def create(self, data):
         if not isinstance(data, list):
             raise TypeError('`create` require a parameter type `list`')
 
         return self.post(data, self.Action.CREATE)
 
-    @u_auth
+    @required_auth
     def update(self, data):
         if not isinstance(data, list):
             raise TypeError('`update` require a parameter type `list of lists`')
 
         return self.post(data, self.Action.UPDATE)
 
-    @u_auth
+    @required_auth
     def delete(self, record_ids):
         if not isinstance(record_ids, list):
             raise TypeError('`update` require a parameter type `list of lists`')
 
         return self.post(record_ids, SoapSObject.Action.DELETE)
 
-    @u_auth
+    @required_auth
     def post(self, data, action):
         """post -- """
         if action != self.Action.DESCRIBE and not isinstance(data, list):
@@ -230,7 +230,7 @@ class SoapSObject(SObject):
             data=request_body
         )
 
-    @u_auth
+    @required_auth
     def get(self, record_id=None, params=None):
         """get -- """
         pass

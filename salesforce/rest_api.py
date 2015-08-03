@@ -7,7 +7,7 @@ from .login import LoginWithRestAPI
 from .s_object import SObject
 from .url_resources import ResourcesName
 from .utils import (
-    authenticate as u_auth,
+    required_auth,
     json_content_headers,
     get_request_url,
     send_request
@@ -48,7 +48,7 @@ class SalesForceRestAPI(SalesForceAPI):
 
         return self.__login_api.get_auth_uri()
 
-    @u_auth
+    @required_auth
     def query(self, query_string):
         """query -- """
         query_url = self.url_resources.get_full_resource_url(
@@ -58,7 +58,7 @@ class SalesForceRestAPI(SalesForceAPI):
         params = {'q': query_string}
         return self.get(query_url, params)
 
-    @u_auth
+    @required_auth
     def query_all(self, query_string):
         """query_all -- """
         query_url = self.url_resources.get_full_resource_url(
@@ -83,7 +83,7 @@ class SalesForceRestAPI(SalesForceAPI):
 
         return do_query_all(resp)
 
-    @u_auth
+    @required_auth
     def query_more(self, url):
         """query_more -- """
         query_url = self.url_resources.get_full_resource_url(
@@ -98,7 +98,7 @@ class SalesForceRestAPI(SalesForceAPI):
 
         return self.get(get_url)
 
-    @u_auth
+    @required_auth
     def search(self, search_string):
         """search -- """
         search_url = self.url_resources.get_full_resource_url(
@@ -110,12 +110,12 @@ class SalesForceRestAPI(SalesForceAPI):
 
         return self.get(search_url, params)
 
-    @u_auth
+    @required_auth
     def quick_search(self, search_string):
         """quick_search -- """
         return self.search('FIND {%s}' % search_string)
 
-    @u_auth
+    @required_auth
     def get(self, get_url, params=None):
         """get -- """
         return self.__send_request(
@@ -124,7 +124,7 @@ class SalesForceRestAPI(SalesForceAPI):
             params=params
         )
 
-    @u_auth
+    @required_auth
     def post(self, post_url, data):
         """post -- """
         return self.__send_request(
@@ -133,7 +133,7 @@ class SalesForceRestAPI(SalesForceAPI):
             data=json.dumps(data)
         )
 
-    @u_auth
+    @required_auth
     def __getattr__(self, name):
         """__getattr__ -- """
         if not name[0].isalpha():
@@ -173,17 +173,17 @@ class RestSObject(SObject):
 
         self.__name = name
 
-    @u_auth
+    @required_auth
     def describe(self):
         """describe -- """
         return self.get('/describe')
 
-    @u_auth
+    @required_auth
     def create(self, data):
         """create -- """
         return self.post(data)
 
-    @u_auth
+    @required_auth
     def update(self, data):
         """update -- """
         if not isinstance(data, list):
@@ -207,7 +207,7 @@ class RestSObject(SObject):
             data=json.dumps(records)
         )
 
-    @u_auth
+    @required_auth
     def delete(self, record_id):
         """delete -- """
         delete_url = '{0}/{1}'.format(
@@ -224,7 +224,7 @@ class RestSObject(SObject):
             delete_url
         )
 
-    @u_auth
+    @required_auth
     def post(self, data, record_id=None):
         """post -- """
         post_url = self.url_resources.get_resource_sobject_url(
@@ -242,7 +242,7 @@ class RestSObject(SObject):
             data=json.dumps(data)
         )
 
-    @u_auth
+    @required_auth
     def get(self, url=None, params=None):
         """get -- """
         get_url = self.url_resources.get_resource_sobject_url(
