@@ -22,7 +22,7 @@ class Version(object):
 
         latest_version = max(
             latest_version,
-            *[float(v['version'] for v in response)]
+            *[float(v['version']) for v in response]
         )
 
         return latest_version
